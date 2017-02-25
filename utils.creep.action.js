@@ -2,9 +2,11 @@ var utilsCreepTravel = require('utils.creep.travel');
 var utilsSource = require('utils.source');
 
 function goHarvest(creep) {
-    var source = creep.room.find(FIND_SOURCES)[0];
-    var target = utilsSource.allocate(creep, source);
+    var allocation = utilsSource.allocate(creep);
+    if (!allocation) return;
     
+    var {target,source} = allocation;
+
     if (!target) return;
     
     if (creep.pos.x !== target.x || creep.pos.y !== target.y) {
@@ -21,9 +23,19 @@ function goHarvest(creep) {
 
 }
 
-function goTransferEnergy(creep, target) {
+function goTransferEnergy(creep) {
     var target = Game.spawns['Spawn1'];
     var err = creep.transfer(target, RESOURCE_ENERGY);
+    switch (err) {
+        case ERR_NOT_IN_RANGE:
+            utilsCreepTravel.moveTo(creep, target);
+            break;
+    }
+}
+
+function goUpgrade(creep) {
+    var target = creep.room.controller;
+    var err = creep.upgradeController(target);
     switch (err) {
         case ERR_NOT_IN_RANGE:
             utilsCreepTravel.moveTo(creep, target);
@@ -39,7 +51,10 @@ function performAction(creep) {
             goHarvest(creep);
             break;
         case 'transferEnergy':
-            goTransferEnergy(creep, Game.getObjectById(creep.memory.targetId));
+            goTransferEnergy(creep);
+            break;
+        case 'upgrade':
+            goUpgrade(creep);
             break;
         default:
             creep.say("No action!");

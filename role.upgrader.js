@@ -4,23 +4,20 @@ function setHarvestAction(creep) {
     creep.memory.action = 'harvest';
 }
 
-function setTransferAction(creep) {
-    creep.memory.action = 'transferEnergy';
+function setUpgradeAction(creep) {
+    creep.memory.action = 'upgrade';
 }
 
 function run(creep) {
+    var action = creep.memory.action;
     
     // if no energy - harvest
-    if (creep.memory.action != 'harvest' && creep.carry.energy == 0) {
+    if (action != 'harvest' && creep.carry.energy == 0) {
         setHarvestAction(creep);
     }
     
-    if (creep.carry.energy == creep.carryCapacity && creep.room.energyAvailable === creep.room.energyCapacityAvailable) {
-        creep.memory.action = 'upgrade';
-    }
-    
     // if full energy - tranfer
-    if (creep.memory.action != 'upgrade' && creep.carry.energy == creep.carryCapacity) {
+    if (creep.carry.energy > 0) {
         setTransferAction(creep);
     }
     

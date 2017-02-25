@@ -1,9 +1,10 @@
 var utilsGame = require('utils.game');
+var utilsSource = require('utils.source');
 
 function handleSpawn(spawn) {
     if (spawn.spawning) return;
-    
-    if (spawn.energy == spawn.energyCapacity) {
+
+    if (utilsSource.harvestingPositionsAvailable(spawn.room)) {
         spawn.createCreep([CARRY,WORK,MOVE],undefined,{role: 'harvester'});
     }
     

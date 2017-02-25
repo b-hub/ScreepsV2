@@ -1,17 +1,17 @@
 var roleHarvester = require('role.harvester');
 
 var creepRoleMap = {
-    harvester: roleHarvester.run
+    harvester: roleHarvester
 };
 
 function commandCreep(creep) {
     if (!creep) return;
-    var fn = creepRoleMap[creep.memory.role]; 
-    if (!fn) {
+    var role = creepRoleMap[creep.memory.role]; 
+    if (!role) {
        creep.say("No role");
        return;
     }
-    fn(creep);
+    role.run(creep);
 }
 
 module.exports = {
