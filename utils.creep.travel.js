@@ -7,7 +7,7 @@ var PATH_STYLE = {
 };
 
 function moveTo(creep, target) {
-    creep.moveTo(target, {visualizePathStyle: PATH_STYLE});
+    creep.moveTo(target, {visualizePathStyle: PATH_STYLE, reusePath: 5});
 }
 
 module.exports = {

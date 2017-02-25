@@ -1,7 +1,7 @@
 var utilsCreepAction = require('utils.creep.action');
 
 function setHarvestAction(creep) {
-    creep.memory.action = 'harvest';
+    creep.memory.action = 'withdraw';
 }
 
 function setUpgradeAction(creep) {

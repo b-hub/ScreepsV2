@@ -49,7 +49,7 @@ function getHarvestingPositions(source) {
 function harvestingPositionsAvailable(room) {
     var sources = room.find(FIND_SOURCES);
     for (var i in sources) {
-        if (getHarvestingPositions(sources[i]).length) return true;
+        if (getHarvestingPositions(sources[i]).filter(isFree).length) return true;
     }
     return false;
 }
@@ -57,7 +57,16 @@ function harvestingPositionsAvailable(room) {
 function allocate(creep, source) {
     var existingSourceId = creep.memory.sourceId;
     if (existingSourceId) {
-        return allocateWithSource(creep, Game.getObjectById(existingSourceId));
+        var pos = creep.memory.harvestingPosition;
+        source = Game.getObjectById(existingSourceId);
+        if (pos) {
+            return {
+                target: new RoomPosition(pos.x, pos.y, pos.roomName),
+                source: source
+            };
+        }
+        
+        return allocateWithSource(creep, source);
     }
     if (source) {
         return allocateWithSource(creep, source);
@@ -79,6 +88,8 @@ function allocateWithSource(creep, source) {
     var allocatedPositions = harvestingPositions.filter(e => e.allocatedCreepName == creep.name);
     if (allocatedPositions.length) {
         var pos = allocatedPositions[0].pos;
+        creep.memory.sourceId = source.id;
+        creep.memory.harvestingPosition = pos;
         return {
             target: new RoomPosition(pos.x, pos.y, pos.roomName),
             source: source
@@ -91,6 +102,7 @@ function allocateWithSource(creep, source) {
     var freePos = freePositions[0];
     freePos.allocatedCreepName = creep.name;
     creep.memory.sourceId = source.id;
+    creep.memory.harvestingPosition = freePos.pos;
     return {
         target: new RoomPosition(freePos.pos.x, freePos.pos.y, freePos.pos.roomName),
         source: source
