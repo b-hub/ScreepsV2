@@ -2,37 +2,58 @@ var utilsCreepAction = require('utils.creep.action');
 
 var minParts = [CARRY,MOVE,WORK];
 var incParts = [CARRY,MOVE,MOVE,WORK,WORK];
-var incCost = 200;
-var minCost = 350;
+var incCost = 350;
+var minCost = 200;
 
 function run(creep) {
     
     // if no energy - harvest
-    if (creep.memory.action != 'harvest' && creep.carry.energy == 0) {
+    if (creep.memory.action != 'withdraw' && creep.carry.energy == 0) {
         creep.memory.action = 'harvest';
     }
     
-    if (creep.memory.action != 'harvest' && creep.carry.energy > 0 && creep.room.energyAvailable === creep.room.energyCapacityAvailable) {
+    if (!creep.memory.action && creep.carry.energy > 0 && creep.room.energyAvailable === creep.room.energyCapacityAvailable) {
         creep.memory.action = 'build';
     }
     
     // if full energy - tranfer
-    if (creep.memory.action != 'build' && creep.carry.energy >= creep.carryCapacity - creep.getActiveBodyparts(WORK)) {
+    if (!creep.memory.action && creep.carry.energy > 0) {
         creep.memory.action = 'transferEnergy';
     }
     
-    utilsCreepAction.performAction(creep);
-    
+    var failedAction = utilsCreepAction.performAction(creep);
+
     creep.upgradeController(creep.room.controller);
+    
+    if (failedAction == 'build' && creep.carry.energy > 0 || creep.room.controller.ticksToDowngrade < 2000) {
+        creep.memory.action = 'upgrade';
+        
+    } else if (failedAction == 'harvest' && creep.carry.energy == 0) {
+        creep.memory.action = 'withdraw';
+    }
+    
+    var repairTargets = creep.pos.findInRange(FIND_STRUCTURES, 3, {
+        filter: (s) => {
+            return (s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART) && s.hits < s.hitsMax;
+        }
+    });
+    
+    if (repairTargets.length) {
+        creep.repair(repairTargets[0]);
+    }
 }
 
 function getParts(energy) {
-    var cost = minCost;
-    var parts = minParts.slice(0);
+    if (energy < minCost) return [];
+    if (energy < incCost) return minParts;
+    
+    var cost = incCost;
+    var parts = incParts.slice(0);
     while (cost + incCost <= energy){
         parts = parts.concat(incParts);
         cost += incCost;
     }
+    
     return parts;
 }
 
