@@ -1,7 +1,11 @@
 var roleHarvester = require('role.harvester');
+var roleClaimer = require('role.claimer');
+var roleRunner = require('role.runner');
 
 var creepRoleMap = {
-    harvester: roleHarvester
+    harvester: roleHarvester,
+    claimer: roleClaimer,
+    runner: roleRunner
 };
 
 function getRole(creep) {

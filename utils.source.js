@@ -1,29 +1,11 @@
-function getSavedInfo(source) {
-    var gameObjId = source.id;
-    if (!Memory[gameObjId]) {
-        Memory[gameObjId] = {};
+function getSavedInfo(sourceId) {
+    if (!Memory.sources) {
+        Memory.sources = {};
     }
-    return Memory[gameObjId];
-}
-
-function calculateMaxCreepCount(source) {
-    var pos = source.pos;
-    return _.filter(source.room.lookAtArea(pos.y-1, pos.x-1, pos.y+1, pos.x+1, true), {
-        filter: (e) => {
-            return e.type === LOOK_TERRAIN && e.terrain !== 'wall';
-        }
-    }).length;
-}
-
-function maxCreepCount(source) {
-    var savedInfo = getSavedInfo(source);
-    if (savedInfo.maxCreepCount) {
-        return savedInfo.maxCreepCount;
+    if (!Memory.sources[sourceId]) {
+        Memory.sources[sourceId] = {};
     }
-    
-    var count = calculateMaxCreepCount(source);
-    savedInfo.maxCreepCount = count;
-    return count;
+    return Memory.sources[sourceId];
 }
 
 function calculateHarvestingPositions(source) {
@@ -35,61 +17,55 @@ function calculateHarvestingPositions(source) {
     
 }
 
-function getHarvestingPositions(source) {
-    var savedInfo = getSavedInfo(source);
+function getHarvestingPositions(sourceId) {
+    var savedInfo = getSavedInfo(sourceId);
     if (savedInfo.harvestingPositions) {
         return savedInfo.harvestingPositions;
     }
-    
+    var source = Game.getObjectById(sourceId);
+    if (!source) return;
     var positions = calculateHarvestingPositions(source);
-    savedInfo.harvestingPositions = positions.map(e => {return {pos: e, allocatedCreepName: undefined};});
+    savedInfo.harvestingPositions = positions.map(e => {return {pos: e, allocatedCreepName: undefined, sourceId: source.id};});
     return positions;
 }
 
 function harvestingPositionsAvailable(room) {
     var sources = room.find(FIND_SOURCES);
     for (var i in sources) {
-        if (getHarvestingPositions(sources[i]).filter(isFree).length) return true;
+        if (getHarvestingPositions(sources[i].id).filter(isFree).length) return true;
     }
     return false;
 }
 
-function allocate(creep, source) {
+function allocate(creep) {
     var existingSourceId = creep.memory.sourceId;
     if (existingSourceId) {
-        var pos = creep.memory.harvestingPosition;
-        source = Game.getObjectById(existingSourceId);
-        if (pos) {
-            return {
-                target: new RoomPosition(pos.x, pos.y, pos.roomName),
-                source: source
-            };
-        }
-        
-        return allocateWithSource(creep, source);
+        return allocateWithSource(creep, existingSourceId);
     }
-    if (source) {
-        return allocateWithSource(creep, source);
-    }
+
     var sources = creep.room.find(FIND_SOURCES);
     for (var i in sources) {
-        var allocation = allocateWithSource(creep, sources[i]);
+        var allocation = allocateWithSource(creep, sources[i].id);
+        if (allocation) return allocation;
+    }
+    
+    for (var id in Memory.sources) {
+        var allocation = allocateWithSource(creep, id);
         if (allocation) return allocation;
     }
     
     return;
 }
 
-function allocateWithSource(creep, source) {
-    var savedInfo = getSavedInfo(source);
-    
-    var harvestingPositions = getHarvestingPositions(source);
+function allocateWithSource(creep, sourceId) {
+    var harvestingPositions = getHarvestingPositions(sourceId);
+    if (!harvestingPositions) return;
+    var source = Game.getObjectById(sourceId);
     
     var allocatedPositions = harvestingPositions.filter(e => e.allocatedCreepName == creep.name);
     if (allocatedPositions.length) {
         var pos = allocatedPositions[0].pos;
         creep.memory.sourceId = source.id;
-        creep.memory.harvestingPosition = pos;
         return {
             target: new RoomPosition(pos.x, pos.y, pos.roomName),
             source: source
@@ -102,7 +78,6 @@ function allocateWithSource(creep, source) {
     var freePos = freePositions[0];
     freePos.allocatedCreepName = creep.name;
     creep.memory.sourceId = source.id;
-    creep.memory.harvestingPosition = freePos.pos;
     return {
         target: new RoomPosition(freePos.pos.x, freePos.pos.y, freePos.pos.roomName),
         source: source
@@ -115,7 +90,6 @@ function isFree(harvestingPosition) {
 }
 
 module.exports = {
-    maxCreepCount: maxCreepCount,
     allocate: allocate,
     harvestingPositionsAvailable: harvestingPositionsAvailable
 };

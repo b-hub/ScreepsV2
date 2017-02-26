@@ -1,25 +1,41 @@
 var utilsCreepTravel = require('utils.creep.travel');
 var utilsSource = require('utils.source');
 
+function endAction(creep) {
+    delete creep.memory.action;
+}
+
 function goHarvest(creep) {
+    if (creep.carry.energy >= creep.carryCapacity - creep.getActiveBodyparts(WORK)) {
+        return;
+    }
+    
     var allocation = utilsSource.allocate(creep);
     if (!allocation) return;
     
     var {target,source} = allocation;
 
     if (!target) return;
+    if (source.energy == 0) return;
     
     if (creep.pos.x !== target.x || creep.pos.y !== target.y) {
         utilsCreepTravel.moveTo(creep, target);
-        return;
+        return true;
     }
     
     var err = creep.harvest(source);
-    switch (err) {
-        case ERR_NOT_IN_RANGE:
-            utilsCreepTravel.moveTo(creep, target);
-            break;
+    
+    var containers = creep.pos.findInRange(FIND_STRUCTURES, 1, {
+       filter: s => {
+           return s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < s.storeCapacity;
+       } 
+    });
+    
+    if (containers.length) {
+        creep.transfer(containers[0], RESOURCE_ENERGY);
     }
+
+    return true;
 
 }
 
@@ -29,12 +45,17 @@ function goTransferEnergy(creep) {
             return (s.structureType === STRUCTURE_SPAWN || s.structureType === STRUCTURE_EXTENSION) && s.energy < s.energyCapacity;
         }
     });
+    
+    if (!target) return false;
+    
     var err = creep.transfer(target, RESOURCE_ENERGY);
     switch (err) {
         case ERR_NOT_IN_RANGE:
             utilsCreepTravel.moveTo(creep, target);
             break;
     }
+    
+    return true;
 }
 
 function goUpgrade(creep) {
@@ -60,44 +81,55 @@ function goWithdraw(creep) {
         case ERR_NOT_IN_RANGE:
             utilsCreepTravel.moveTo(creep, target);
             break;
+        case OK:
+            return;
     }
+    
+    return true;
 }
 
 function goBuild(creep) {
-    var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if (!targets.length) return;
+    var target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+    if (!target) return;
     
-    var target = targets[0];
     var err = creep.build(target);
     switch (err) {
         case ERR_NOT_IN_RANGE:
             utilsCreepTravel.moveTo(creep, target);
             break;
     }
+    
+    return true;
 }
 
 function performAction(creep) {
     var action = creep.memory.action;
+    var result = true;
     
     switch (action) {
         case 'harvest':
-            goHarvest(creep);
+            result = goHarvest(creep);
             break;
         case 'transferEnergy':
-            goTransferEnergy(creep);
+            result = goTransferEnergy(creep);
             break;
         case 'upgrade':
             goUpgrade(creep);
             break;
         case 'withdraw':
-            goWithdraw(creep);
+            result = goWithdraw(creep);
             break;
         case 'build':
-            goBuild(creep);
+            result = goBuild(creep);
             break;
         default:
             creep.say("No action!");
             break;
+    }
+    
+    if (!result) {
+        endAction(creep);
+        return action;
     }
 }
 
