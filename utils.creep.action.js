@@ -24,7 +24,11 @@ function goHarvest(creep) {
 }
 
 function goTransferEnergy(creep) {
-    var target = Game.spawns['Spawn1'];
+    var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: s => {
+            return (s.structureType === STRUCTURE_SPAWN || s.structureType === STRUCTURE_EXTENSION) && s.energy < s.energyCapacity;
+        }
+    });
     var err = creep.transfer(target, RESOURCE_ENERGY);
     switch (err) {
         case ERR_NOT_IN_RANGE:
@@ -36,6 +40,35 @@ function goTransferEnergy(creep) {
 function goUpgrade(creep) {
     var target = creep.room.controller;
     var err = creep.upgradeController(target);
+    switch (err) {
+        case ERR_NOT_IN_RANGE:
+            utilsCreepTravel.moveTo(creep, target);
+            break;
+    }
+}
+
+function goWithdraw(creep) {
+    var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: s => {
+            return s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
+        }
+    });
+    
+    if (!target) return;
+    var err = creep.withdraw(target, RESOURCE_ENERGY);
+    switch (err) {
+        case ERR_NOT_IN_RANGE:
+            utilsCreepTravel.moveTo(creep, target);
+            break;
+    }
+}
+
+function goBuild(creep) {
+    var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
+    if (!targets.length) return;
+    
+    var target = targets[0];
+    var err = creep.build(target);
     switch (err) {
         case ERR_NOT_IN_RANGE:
             utilsCreepTravel.moveTo(creep, target);
@@ -55,6 +88,12 @@ function performAction(creep) {
             break;
         case 'upgrade':
             goUpgrade(creep);
+            break;
+        case 'withdraw':
+            goWithdraw(creep);
+            break;
+        case 'build':
+            goBuild(creep);
             break;
         default:
             creep.say("No action!");

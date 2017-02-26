@@ -4,9 +4,13 @@ var creepRoleMap = {
     harvester: roleHarvester
 };
 
-function commandCreep(creep) {
+function getRole(creep) {
     if (!creep) return;
-    var role = creepRoleMap[creep.memory.role]; 
+    return creepRoleMap[creep.memory.role]; 
+}
+
+function commandCreep(creep) {
+    var role = getRole(creep);
     if (!role) {
        creep.say("No role");
        return;
@@ -14,6 +18,23 @@ function commandCreep(creep) {
     role.run(creep);
 }
 
+function build(spawn, roleName, maxParts) {
+    var role = creepRoleMap[roleName];
+    if (!role) console.log("RoleHandler: Unknown role to spawn?");
+
+    creepParts = role.getParts(spawn.room.energyAvailable);
+    if (!creepParts.length) return false;
+    
+    if (maxParts && role.getParts(spawn.room.energyCapacityAvailable).length != creepParts.length) return false;
+
+    var err = spawn.createCreep(creepParts, undefined, {role: roleName});
+    console.log(err, spawn.room.energyAvailable);
+    
+    console.log("Creating creep: " + roleName + " with parts: " + creepParts.join());
+    return true;
+}
+
 module.exports = {
-    commandCreep: commandCreep
+    commandCreep: commandCreep,
+    build: build
 };
