@@ -9,4 +9,13 @@ module.exports = function() {
        delete Memory.creeps[name];
     });
     utilsGame.getCreeps().forEach(roleHandler.commandCreep);
+
+
+    var towers = [].concat.apply([], Object.keys(Game.rooms).map(function(e){
+        return Game.rooms[e].find(FIND_MY_STRUCTURES, {
+            filter: {structureType: STRUCTURE_TOWER}
+        });
+    }));
+    
+    towers.forEach(roleHandler.commandTower);
 };

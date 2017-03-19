@@ -4,16 +4,20 @@ var roleHandler = require('roleHandler');
 
 function handleSpawn(spawn) {
     if (spawn.spawning) return;
-
-    if (utilsSource.harvestingPositionsAvailable(spawn.room) || utilsSource.harvestingPositionsAvailable(Game.rooms['W81S22'])) {
-        if (roleHandler.build(spawn, 'harvester', Object.keys(Game.creeps).length > 1)) return;
-    }
     
-    var creeps = spawn.pos.findInRange(FIND_MY_CREEPS,1).filter(c => c.ticksToLive < 1000);
+    var creeps = spawn.pos.findInRange(FIND_MY_CREEPS,1).filter(c => c.ticksToLive < 1250);
     if (creeps.length) {
         spawn.renewCreep(creeps[0]);
-        creeps[0].say("renewing");
     }
+    
+    //if (spawn.room.name == 'W81S22') return;
+    //if (spawn.room.name == 'W82S21') return;
+
+    if (utilsSource.harvestingPositionsAvailable(spawn.room)) {
+        if (roleHandler.build(spawn, 'harvester', Object.keys(Game.creeps).length > 1)) return;
+     }// else if (spawn.room.name == 'W81S21' && utilsSource.harvestingPositionsAvailable(Game.rooms['W82S21'])) {
+    //     if (roleHandler.build(spawn, 'harvester', false)) return;
+    // }
 }
 
 module.exports = function() {

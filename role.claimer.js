@@ -5,7 +5,7 @@ function run(creep) {
     
     var targetRoom = creep.memory.targetRoom;
     if (creep.room.name != targetRoom) {
-        utilsCreepTravel.moveTo(creep, new RoomPosition(27, 5, targetRoom));
+        utilsCreepTravel.moveTo(creep, new RoomPosition(25, 25, targetRoom));
         creep.say(targetRoom);
         return;
     }

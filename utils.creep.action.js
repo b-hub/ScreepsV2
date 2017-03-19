@@ -25,6 +25,10 @@ function goHarvest(creep) {
     
     var err = creep.harvest(source);
     
+    creep.upgradeController(creep.room.controller);
+    
+    if (creep.carry.energy > creep.getActiveBodyparts(WORK)*2) return true;
+    
     var containers = creep.pos.findInRange(FIND_STRUCTURES, 1, {
        filter: s => {
            return s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < s.storeCapacity;
@@ -42,10 +46,42 @@ function goHarvest(creep) {
 function goTransferEnergy(creep) {
     var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
         filter: s => {
-            return (s.structureType === STRUCTURE_SPAWN || s.structureType === STRUCTURE_EXTENSION) && s.energy < s.energyCapacity;
+            return (s.structureType === STRUCTURE_SPAWN || s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_TOWER) && s.energy < s.energyCapacity;
         }
     });
     
+    if (!target) return false;
+    
+    var err = creep.transfer(target, RESOURCE_ENERGY);
+    switch (err) {
+        case ERR_NOT_IN_RANGE:
+            utilsCreepTravel.moveTo(creep, target);
+            break;
+    }
+    
+    return true;
+}
+
+function goStoreEnergy(creep) {
+
+    var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: s => {
+            return s.structureType === STRUCTURE_STORAGE && s.store[RESOURCE_ENERGY] < s.storeCapacity;
+        }
+    });
+
+    var upgradeContainer = Game.getObjectById(creep.room.memory.upgradeContainerId);
+
+    if (upgradeContainer && target) {
+        target = creep.pos.findClosestByRange([target, upgradeContainer], {
+           filter: s => {
+               return s.store[RESOURCE_ENERGY] < s.storeCapacity;
+           } 
+        });
+    } else if (upgradeContainer && upgradeContainer.store[RESOURCE_ENERGY] < upgradeContainer.storeCapacity) {
+        target = upgradeContainer;
+    }
+
     if (!target) return false;
     
     var err = creep.transfer(target, RESOURCE_ENERGY);
@@ -69,11 +105,33 @@ function goUpgrade(creep) {
 }
 
 function goWithdraw(creep) {
-    var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+    var target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: s => {
-            return s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
+            return (s.structureType === STRUCTURE_CONTAINER || s.structureType === STRUCTURE_STORAGE) && s.store[RESOURCE_ENERGY] > creep.carryCapacity
+                && s.id != creep.room.memory.upgradeContainerId;
         }
     });
+
+    if (!target) return;
+    var err = creep.withdraw(target, RESOURCE_ENERGY);
+    switch (err) {
+        case ERR_NOT_IN_RANGE:
+            utilsCreepTravel.moveTo(creep, target);
+            break;
+        case OK:
+            return;
+    }
+    
+    return true;
+}
+
+function goWithdrawContainer(creep) {
+    var target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: s => {
+            return (s.structureType === STRUCTURE_CONTAINER) && s.store[RESOURCE_ENERGY] > creep.carryCapacity
+                && s.id != creep.room.memory.upgradeContainerId;
+        }
+    });//.sort((a,b) => b.store[RESOURCE_ENERGY] - a.store[RESOURCE_ENERGY]);
     
     if (!target) return;
     var err = creep.withdraw(target, RESOURCE_ENERGY);
@@ -119,8 +177,14 @@ function performAction(creep) {
         case 'withdraw':
             result = goWithdraw(creep);
             break;
+        case 'withdrawContainer':
+            result = goWithdrawContainer(creep);
+            break;
         case 'build':
             result = goBuild(creep);
+            break;
+        case 'storeEnergy':
+            result = goStoreEnergy(creep);
             break;
         default:
             creep.say("No action!");

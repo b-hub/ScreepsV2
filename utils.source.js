@@ -26,13 +26,15 @@ function getHarvestingPositions(sourceId) {
     if (!source) return;
     var positions = calculateHarvestingPositions(source);
     savedInfo.harvestingPositions = positions.map(e => {return {pos: e, allocatedCreepName: undefined, sourceId: source.id};});
-    return positions;
+    return savedInfo.harvestingPositions;
 }
 
 function harvestingPositionsAvailable(room) {
     var sources = room.find(FIND_SOURCES);
+
     for (var i in sources) {
-        if (getHarvestingPositions(sources[i].id).filter(isFree).length) return true;
+        var harvestingPositions = getHarvestingPositions(sources[i].id);
+        if (harvestingPositions.filter(isFree).length) return true;
     }
     return false;
 }
@@ -74,7 +76,7 @@ function allocateWithSource(creep, sourceId) {
     
     var freePositions = harvestingPositions.filter(isFree);
     if (!freePositions.length) return;
-    
+
     var freePos = freePositions[0];
     freePos.allocatedCreepName = creep.name;
     creep.memory.sourceId = source.id;

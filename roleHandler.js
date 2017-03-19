@@ -1,11 +1,16 @@
 var roleHarvester = require('role.harvester');
 var roleClaimer = require('role.claimer');
 var roleRunner = require('role.runner');
+var roleTower = require('role.tower');
+var roleTrucker = require('role.trucker');
+var roleUpgrader = require('role.upgrader');
 
 var creepRoleMap = {
     harvester: roleHarvester,
     claimer: roleClaimer,
-    runner: roleRunner
+    runner: roleRunner,
+    trucker: roleTrucker,
+    upgrader: roleUpgrader
 };
 
 function getRole(creep) {
@@ -20,6 +25,10 @@ function commandCreep(creep) {
        return;
     }
     role.run(creep);
+}
+
+function commandTower(tower) {
+    roleTower.run(tower);
 }
 
 function build(spawn, roleName, maxParts) {
@@ -40,5 +49,6 @@ function build(spawn, roleName, maxParts) {
 
 module.exports = {
     commandCreep: commandCreep,
+    commandTower: commandTower,
     build: build
 };

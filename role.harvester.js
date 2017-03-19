@@ -4,6 +4,7 @@ var minParts = [CARRY,MOVE,WORK];
 var incParts = [CARRY,MOVE,MOVE,WORK,WORK];
 var incCost = 350;
 var minCost = 200;
+var maxCost = 3 * incCost;
 
 function run(creep) {
     
@@ -12,7 +13,7 @@ function run(creep) {
         creep.memory.action = 'harvest';
     }
     
-    if (!creep.memory.action && creep.carry.energy > 0 && creep.room.energyAvailable === creep.room.energyCapacityAvailable) {
+    if (!creep.memory.action && creep.carry.energy > 40 && creep.room.energyAvailable === creep.room.energyCapacityAvailable) {
         creep.memory.action = 'build';
     }
     
@@ -22,8 +23,6 @@ function run(creep) {
     }
     
     var failedAction = utilsCreepAction.performAction(creep);
-
-    creep.upgradeController(creep.room.controller);
     
     if (failedAction == 'build' && creep.carry.energy > 0 || creep.room.controller.ticksToDowngrade < 2000) {
         creep.memory.action = 'upgrade';
@@ -46,6 +45,7 @@ function run(creep) {
 function getParts(energy) {
     if (energy < minCost) return [];
     if (energy < incCost) return minParts;
+    if (energy >= maxCost) energy = maxCost;
     
     var cost = incCost;
     var parts = incParts.slice(0);

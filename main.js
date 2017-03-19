@@ -2,17 +2,14 @@ var handleCreeps = require('handler.creeps');
 var handleSpawns = require('handler.spawns');
 
 module.exports.loop = function () {
-    handleSpawns();
     handleCreeps();
+    handleSpawns();
     
     //console.log(Game.cpu.getUsed());
     renderSourceStats(Game.getObjectById('5873bc2e11e3e4361b4d72fa'), 24, 35);
     renderSourceStats(Game.getObjectById('5873bc2e11e3e4361b4d72fc'), 24, 41);
     
     renderControllerStats(Game.getObjectById('5873bc2e11e3e4361b4d72fb'), 20, 40);
-
-
-
 }
 
 function renderSourceStats(source, x, y) {
